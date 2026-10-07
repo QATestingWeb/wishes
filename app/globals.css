@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #2b1d16;
+  --color-ink-soft: #6f5a4e;
+  --color-cream: #fffaf3;
+  --color-sand: #f6ece0;
+  --color-line: #ead9c7;
+  --color-coral: #e5432f;
+  --color-coral-dark: #c4321f;
+  --color-coral-soft: #ffe3dc;
+  --color-sun: #f7b733;
+  --color-teal: #1f9e8f;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-sun);
+  outline-offset: 2px;
+}
+
+/* ---- Wish decorations & reveal ---------------------------------------- */
+
+@keyframes deco-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(115vh) rotate(540deg); opacity: 0.9; }
+}
+.deco-fall { animation: deco-fall linear infinite both; }
+
+@keyframes deco-drift {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.75; }
+  50% { transform: translate(30px, 55vh) rotate(160deg); }
+  100% { transform: translate(-20px, 115vh) rotate(320deg); opacity: 0.6; }
+}
+.deco-drift { animation: deco-drift ease-in-out infinite both; }
+
+@keyframes deco-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-18px) rotate(2deg); }
+}
+.deco-float { animation: deco-float ease-in-out infinite; }
+
+@keyframes deco-twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.deco-twinkle { animation: deco-twinkle 3s ease-in-out infinite; }
+
+@keyframes wish-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.wish-in { animation: wish-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes envelope-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.envelope-bob { animation: envelope-bob 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .deco-fall, .deco-drift, .deco-float, .deco-twinkle, .envelope-bob { animation: none !important; }
+  .deco-fall, .deco-drift { display: none; }
+  .wish-in { animation-duration: 0.01s !important; }
+}

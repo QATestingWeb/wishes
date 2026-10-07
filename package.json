@@ -1,0 +1,29 @@
+{
+  "name": "birthday-wishes",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "nanoid": "^6.0.2",
+    "next": "^16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "*",
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "postcss": "*",
+    "tailwindcss": "^4.3.3",
+    "typescript": "*"
+  }
+}
