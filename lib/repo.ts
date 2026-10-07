@@ -3,6 +3,7 @@ import { customAlphabet } from "nanoid";
 import { blobs, db } from "./storage";
 import { THEMES, type Theme } from "./themes";
 import { retentionDays } from "./site";
+import type { QuizItem } from "./wish-types";
 
 /* ----------------------------------------------------------------- Wishes */
 
@@ -12,6 +13,8 @@ export interface Wish {
   senderName: string;
   message: string;
   photoIds: string[];
+  captions: string[];
+  quiz: QuizItem[];
   themeId: string;
   createdAt: string;
   expiresAt: string;
@@ -38,6 +41,8 @@ export async function createWish(input: {
   senderName: string;
   message: string;
   photoIds: string[];
+  captions: string[];
+  quiz: QuizItem[];
   themeId: string;
 }): Promise<Wish> {
   const prefix = slugPrefix(input.recipientName);
@@ -60,9 +65,11 @@ export function isExpired(w: Wish) {
   return new Date(w.expiresAt).getTime() < Date.now();
 }
 
-export async function getWish(slug: string) {
+export async function getWish(slug: string): Promise<Wish | null> {
   if (!/^[a-z0-9-]{4,40}$/.test(slug)) return null;
-  return db.read<Wish>("wishes", slug);
+  const w = await db.read<Wish>("wishes", slug);
+  // records created before quizzes/captions existed
+  return w ? { ...w, captions: w.captions ?? [], quiz: w.quiz ?? [] } : null;
 }
 
 export async function updateWish(slug: string, fn: (w: Wish) => Wish) {

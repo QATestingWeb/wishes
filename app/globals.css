@@ -77,3 +77,63 @@ body {
   .deco-fall, .deco-drift { display: none; }
   .wish-in { animation-duration: 0.01s !important; }
 }
+
+/* ---- Surprise experience ---------------------------------------------- */
+
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.screen-in { animation: screen-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes sticker-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
+.sticker-bob { animation: sticker-bob 2.6s ease-in-out infinite; }
+
+@keyframes tear-drop {
+  0% { transform: translateY(0); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(14px); opacity: 0; }
+}
+.tear-drop { animation: tear-drop 1.4s ease-in infinite; }
+
+@keyframes float-hearts {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(-5px); opacity: 0.7; }
+}
+.float-hearts { animation: float-hearts 1.8s ease-in-out infinite; }
+
+@keyframes burst-fall {
+  0% { transform: translate(0, -10px) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--drift, 0), 110cqh) rotate(720deg); opacity: 0.2; }
+}
+.burst-piece { animation: burst-fall ease-in both; }
+
+@keyframes flame {
+  0%, 100% { transform: scale(1, 1) rotate(-2deg); }
+  50% { transform: scale(0.92, 1.08) rotate(2deg); }
+}
+.flame { animation: flame 0.5s ease-in-out infinite; transform-box: view-box; }
+
+@keyframes smoke {
+  from { opacity: 0.8; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-16px); }
+}
+.smoke { animation: smoke 1.4s ease-out both; }
+
+@keyframes quiz-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.quiz-shake { animation: quiz-shake 0.4s; }
+
+@keyframes caret { 50% { opacity: 0; } }
+.caret { animation: caret 0.8s steps(1) infinite; margin-left: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-in, .sticker-bob, .tear-drop, .float-hearts, .flame, .burst-piece { animation: none !important; }
+  .burst-piece { display: none; }
+}

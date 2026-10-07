@@ -19,6 +19,7 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
         maxPhotos: LIMITS.maxPhotos,
         maxNameLength: LIMITS.maxNameLength,
         maxMessageLength: LIMITS.maxMessageLength,
+        maxQuiz: LIMITS.maxQuiz,
       }}
     />
   );

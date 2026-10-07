@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
-import { ThemeThumb } from "@/components/ThemeThumb";
-import { WishCard } from "@/components/WishCard";
+import { Surprise } from "@/components/Surprise";
+import { SurpriseThumb } from "@/components/SurpriseThumb";
+import { defaultQuiz } from "@/lib/site";
 import { getActiveThemes, getFaqs } from "@/lib/repo";
 import { retentionDays } from "@/lib/site";
 
@@ -9,8 +10,8 @@ export const dynamic = "force-dynamic";
 
 const STEPS = [
   { n: "1", title: "Add names & photos", body: "Who's the birthday star, who's it from, and a favourite picture or four." },
-  { n: "2", title: "Write your message", body: "Say it in your own words, or start from one of our suggestions." },
-  { n: "3", title: "Pick a design & share", body: "Choose a theme, preview it, and send the link on WhatsApp or anywhere." },
+  { n: "2", title: "Write a letter & a quiz", body: "Your message becomes a handwritten letter. Add a cheeky quiz if you like." },
+  { n: "3", title: "Pick a design & share", body: "They get a playful surprise: a YES they can't refuse, gifts to open and a cake to blow out." },
 ];
 
 function CreateButton({ className = "" }: { className?: string }) {
@@ -45,8 +46,8 @@ export default async function Home() {
               Make their birthday feel <span className="text-coral italic">personal.</span>
             </h1>
             <p className="mt-5 max-w-lg text-lg text-ink-soft">
-              Add their name, your favourite photos and a heartfelt message. We&apos;ll turn it into a beautiful birthday
-              page you can share with a single link.
+              Not just a card — a little interactive surprise. They tap through a question they can&apos;t say no to,
+              open your gifts, read your letter, and blow out the candles. All from one link.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <CreateButton />
@@ -59,15 +60,19 @@ export default async function Home() {
           {hero && (
             <div className="relative mx-auto w-full max-w-[340px]">
               <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-gradient-to-br from-sun/30 via-coral-soft to-teal/20 blur-2xl" />
+              <p className="mb-3 text-center text-sm font-medium text-ink-soft">👇 Try it — it&apos;s interactive</p>
               <div className="overflow-hidden rounded-[2.4rem] border-[10px] border-ink bg-ink shadow-2xl">
-                <div className="h-[560px] overflow-hidden rounded-[1.7rem]">
-                  <WishCard
+                <div className="h-[600px] overflow-y-auto rounded-[1.7rem]">
+                  <Surprise
+                    mode="demo"
                     theme={hero}
                     recipientName="Ayesha"
                     senderName="Sara"
-                    message={"Happy birthday to my favourite person! Here's to another year of adventures, late-night chai and endless laughs."}
+                    message={"Happy birthday to my favourite person! Here's to another year of adventures, late-night chai and endless laughs. You make every day brighter — today is all yours. 💖"}
                     photos={["/sample-cake.svg"]}
-                    animated
+                    captions={["Our cake day 🎂"]}
+                    quiz={defaultQuiz("Sara")}
+                    className="min-h-full"
                   />
                 </div>
               </div>
@@ -98,7 +103,7 @@ export default async function Home() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 className="font-display text-3xl font-semibold sm:text-4xl">Designs for every kind of birthday</h2>
-              <p className="mt-2 text-ink-soft">From playful to elegant — switch anytime while you create.</p>
+              <p className="mt-2 text-ink-soft">Every design runs the same playful surprise — pick the look that fits them.</p>
             </div>
           </div>
           <div className="-mx-5 mt-10 flex snap-x gap-5 overflow-x-auto px-5 pb-4">
@@ -108,7 +113,7 @@ export default async function Home() {
                 href={`/create?theme=${t.id}`}
                 className="group shrink-0 snap-start overflow-hidden rounded-3xl border border-line bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
               >
-                <ThemeThumb theme={t} />
+                <SurpriseThumb theme={t} />
                 <div className="border-t border-line p-4">
                   <p className="font-semibold">{t.name}</p>
                   <p className="mt-0.5 max-w-[150px] text-sm text-ink-soft">{t.description}</p>

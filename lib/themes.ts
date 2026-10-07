@@ -16,11 +16,13 @@ export interface Theme {
   decoration: Decoration;
   colors: {
     background: string; // page background (any CSS background value)
-    card: string; // card surface
+    card: string; // main card surface
     text: string;
     muted: string;
-    accent: string;
-    accentSoft: string;
+    accent: string; // primary buttons ("YES", "Next")
+    onAccent: string; // text on accent
+    alt: string; // secondary button ("No")
+    accentSoft: string; // inner panels (quiz box, gift tiles)
     deco: string[]; // decoration palette
   };
   headingFont: string;
@@ -28,6 +30,25 @@ export interface Theme {
 }
 
 export const THEMES: Theme[] = [
+  {
+    id: "sweet-pink",
+    name: "Sweet Pink",
+    description: "Soft pink card, bold red buttons, falling petals.",
+    decoration: "petals",
+    colors: {
+      background: "linear-gradient(180deg, #fff6f1 0%, #fdeee9 100%)",
+      card: "#fcc9d6",
+      text: "#2a1418",
+      muted: "#6b4650",
+      accent: "#e3121b",
+      onAccent: "#ffffff",
+      alt: "#1f2be0",
+      accentSoft: "#fde0e8",
+      deco: ["#f58fa9", "#fbb6c6", "#e3121b"],
+    },
+    headingFont: "'Playfair Display', Georgia, serif",
+    photoStyle: "polaroid",
+  },
   {
     id: "confetti-pop",
     name: "Confetti Pop",
@@ -39,7 +60,9 @@ export const THEMES: Theme[] = [
       text: "#2b1d16",
       muted: "#7a5d4f",
       accent: "#ef4e3a",
-      accentSoft: "#ffe1d9",
+      onAccent: "#ffffff",
+      alt: "#2bb3a3",
+      accentSoft: "#ffefe6",
       deco: ["#ef4e3a", "#f7b733", "#2bb3a3", "#6c63ff", "#ff7aa8"],
     },
     headingFont: "'Fraunces', Georgia, serif",
@@ -56,7 +79,9 @@ export const THEMES: Theme[] = [
       text: "#f6ecd2",
       muted: "#b9ad8e",
       accent: "#e3b964",
-      accentSoft: "#2a3460",
+      onAccent: "#151f40",
+      alt: "#5a6bd8",
+      accentSoft: "#222d57",
       deco: ["#e3b964", "#f6ecd2", "#c79a3e"],
     },
     headingFont: "'Playfair Display', Georgia, serif",
@@ -73,7 +98,9 @@ export const THEMES: Theme[] = [
       text: "#3d2a44",
       muted: "#87708f",
       accent: "#c2549a",
-      accentSoft: "#f8e1ee",
+      onAccent: "#ffffff",
+      alt: "#8b7bd8",
+      accentSoft: "#f8e9f2",
       deco: ["#f4a6c6", "#c9b2f2", "#a8dccb", "#ffd3b0"],
     },
     headingFont: "'Fraunces', Georgia, serif",
@@ -90,7 +117,9 @@ export const THEMES: Theme[] = [
       text: "#13304a",
       muted: "#557089",
       accent: "#ff6b4a",
-      accentSoft: "#ffe7e0",
+      onAccent: "#ffffff",
+      alt: "#3a86ff",
+      accentSoft: "#eef7ff",
       deco: ["#ff6b4a", "#ffc93c", "#4cc9f0", "#9b5de5", "#00bb7e"],
     },
     headingFont: "'Baloo 2', 'Trebuchet MS', sans-serif",
@@ -107,7 +136,9 @@ export const THEMES: Theme[] = [
       text: "#1c1c1c",
       muted: "#6b6b6b",
       accent: "#1c1c1c",
-      accentSoft: "#efebe4",
+      onAccent: "#ffffff",
+      alt: "#9a9a9a",
+      accentSoft: "#f5f2ed",
       deco: [],
     },
     headingFont: "'Playfair Display', Georgia, serif",

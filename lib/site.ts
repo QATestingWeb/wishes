@@ -9,8 +9,9 @@ export const LIMITS = {
   maxPhotos: 4,
   maxUploadBytes: 10 * 1024 * 1024, // raw upload limit (server)
   maxNameLength: 40,
-  maxMessageLength: 600,
+  maxMessageLength: 1500,
   photoMaxDimension: 1600,
+  maxQuiz: 5,
 } as const;
 
 export function retentionDays(): number {
@@ -25,3 +26,12 @@ export const MESSAGE_SUGGESTIONS = [
   "May this year bring you good health, big dreams and even bigger reasons to celebrate. Happy birthday!",
   "Happy birthday to someone who makes every day brighter. Eat the cake, make the wish, have the fun!",
 ];
+
+/** Starter quiz, personalised with the sender's name when the creator opens the quiz step. */
+export function defaultQuiz(sender: string) {
+  const me = sender.trim() || "Me";
+  return [
+    { q: "Who loves you the most? 🥰", options: [me, "Your phone", "The birthday cake"], answer: 0 },
+    { q: "What's the best part of today? 🎂", options: ["The cake", "The gifts", "Celebrating YOU"], answer: 2 },
+  ];
+}

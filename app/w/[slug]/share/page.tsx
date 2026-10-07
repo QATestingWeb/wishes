@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SharePanel } from "@/components/SharePanel";
 import { SiteHeader } from "@/components/SiteChrome";
-import { ThemeThumb } from "@/components/ThemeThumb";
+import { SurpriseThumb } from "@/components/SurpriseThumb";
 import { WishUnavailable } from "@/components/WishUnavailable";
 import { getTheme } from "@/lib/themes";
 import { siteUrl } from "@/lib/site";
-import { lookupWish, photoUrls } from "@/lib/wish-page";
+import { lookupWish } from "@/lib/wish-page";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Share your wish", robots: { index: false, follow: false } };
@@ -31,7 +31,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
           </p>
           <h1 className="mt-3 font-display text-4xl font-semibold">Your wish is ready!</h1>
           <p className="mt-3 text-ink-soft">
-            Send this link to {wish.recipientName}. Anyone with the link can open it, so share it only with the people you
+            Send this link to {wish.recipientName} — they’ll get a playful surprise with your letter, photos, quiz and a cake to blow out. Anyone with the link can open it, so share it only with the people you
             want to see it.
           </p>
 
@@ -59,12 +59,10 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
           aria-label="Open the birthday page"
         >
           <div className="overflow-hidden rounded-[1.4rem]">
-            <ThemeThumb
+            <SurpriseThumb
               theme={getTheme(wish.themeId)}
               recipientName={wish.recipientName}
               senderName={wish.senderName}
-              message={wish.message}
-              photos={photoUrls(wish)}
               scale={0.7}
               height={520}
             />

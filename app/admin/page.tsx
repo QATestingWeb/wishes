@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/SiteChrome";
-import { ThemeThumb } from "@/components/ThemeThumb";
+import { SurpriseThumb } from "@/components/SurpriseThumb";
 import { getFaqs, getManagedThemes, getStats, isExpired, listWishes } from "@/lib/repo";
 import { adminEnabled, isAdmin } from "@/lib/security";
 import {
@@ -281,7 +281,7 @@ async function Templates() {
       {themes.map((t, i) => (
         <div key={t.id} className={`${card} flex flex-col gap-5 sm:flex-row sm:items-center ${t.active ? "" : "opacity-60"}`}>
           <div className="shrink-0 overflow-hidden rounded-2xl border border-line">
-            <ThemeThumb theme={t} scale={0.28} height={170} />
+            <SurpriseThumb theme={t} scale={0.3} height={170} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

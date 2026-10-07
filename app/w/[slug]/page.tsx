@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { WishReveal } from "@/components/WishReveal";
+import { Surprise } from "@/components/Surprise";
 import { WishUnavailable } from "@/components/WishUnavailable";
 import { getManagedThemes, track, updateWish } from "@/lib/repo";
-import { SITE_NAME } from "@/lib/site";
 import { getTheme } from "@/lib/themes";
 import { lookupWish, photoUrls } from "@/lib/wish-page";
 
@@ -17,8 +16,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const robots = { index: false, follow: false };
   if (r.status !== "ok") return { title: "Birthday wish", robots };
   const { wish } = r;
-  const title = `Happy Birthday, ${wish.recipientName}! 🎉`;
-  const description = `A birthday wish from ${wish.senderName}. Tap to open.`;
+  const title = `${wish.recipientName}, you have a birthday surprise! 🎁`;
+  const description = `${wish.senderName} made something special just for you. Tap to open.`;
   return {
     title: { absolute: title },
     description,
@@ -43,14 +42,19 @@ export default async function WishPage({ params }: Params) {
   const theme = (await getManagedThemes()).find((t) => t.id === wish.themeId) ?? getTheme(wish.themeId);
 
   return (
-    <WishReveal
-      slug={wish.slug}
-      theme={theme}
-      recipientName={wish.recipientName}
-      senderName={wish.senderName}
-      message={wish.message}
-      photos={photoUrls(wish)}
-      siteName={SITE_NAME}
-    />
+    <main>
+      <Surprise
+        mode="live"
+        slug={wish.slug}
+        theme={theme}
+        recipientName={wish.recipientName}
+        senderName={wish.senderName}
+        message={wish.message}
+        photos={photoUrls(wish)}
+        captions={wish.captions}
+        quiz={wish.quiz}
+        className="min-h-dvh"
+      />
+    </main>
   );
 }

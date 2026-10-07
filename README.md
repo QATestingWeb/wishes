@@ -26,16 +26,29 @@ Production: `npm run build && npm start`, or `docker build -t wishful . && docke
 
 ## What's built
 
-- **Landing page** — hero with live animated sample, how-it-works, theme gallery, privacy points, FAQ.
-- **Creator wizard** (`/create`) — 5 steps (Names → Photos → Message → Design → Preview) with progress bar, live phone
-  preview on desktop and a preview sheet on mobile, sticky thumb-friendly action bar, inline validation in plain
-  language, draft saved across refreshes.
-- **Photo upload** — up to 4 photos, client-side downscaling before upload (fast on mobile data), preview, replace,
-  remove, "make main", server-side byte inspection (file names / MIME types aren't trusted), 10 MB limit.
-- **5 themes** — Confetti Pop, Midnight Gold, Pastel Garden, Balloon Party, Simply Elegant.
-- **Wish page** (`/w/[slug]`) — "tap to open" envelope reveal, animated entrance and decorations (respects
-  reduced-motion), Open Graph tags so WhatsApp/iMessage show the photo and name, report button.
-- **Share page** (`/w/[slug]/share`) — copy link, WhatsApp, native share sheet / email, expiry date.
+- **Interactive birthday surprise** (`/w/[slug]`) — modelled on the reference video, adapted for birthdays:
+  1. *"{Name}, are you ready for your birthday surprise? 🥺"* — every **No** grows the **Yes** button and
+     changes the sticker's mood ("Think again 😢" → "Are you really sure? 🥹" → "See this 😏" with one giant Yes).
+     On desktop the No button scoots away from the cursor.
+  2. *Happy Birthday!* with a confetti burst.
+  3. *Gift hub* — Letter, Memories and Birthday Quiz tiles, ticked off as they're opened, then "Finally…".
+  4. *Letter* — the message typed out on ruled, handwritten-style paper.
+  5. *Memories* — polaroid photos with captions.
+  6. *Quiz* — the sender's own questions; wrong answers shake with "Oops, try again 😜".
+  7. *Make a wish* — tap to blow out the candles → confetti → main photo and "With all my love".
+  Original "Mochi" bear stickers are drawn in SVG (no licensed characters).
+- **Landing page** — the surprise runs live inside a phone mock-up so visitors can try it, plus how-it-works,
+  theme gallery, privacy points and FAQs.
+- **Creator wizard** (`/create`) — 6 steps (Names → Photos → Letter → Quiz → Design → Preview). The live preview is
+  the real interactive surprise and jumps to the screen being edited (photos, letter, quiz). Starter quiz is
+  pre-filled with the sender's name; up to 5 questions, each with 3 answers. Photo captions, draft saved across
+  refreshes, plain-language validation, thumb-friendly mobile action bar.
+- **Photo upload** — up to 4 photos, client-side downscaling before upload, preview, replace, remove, "make main",
+  server-side byte inspection, 10 MB limit, EXIF/GPS stripped.
+- **6 themes** — Sweet Pink (default, matches the reference), Confetti Pop, Midnight Gold, Pastel Garden,
+  Balloon Party, Simply Elegant. Each theme recolours the whole surprise.
+- **Share page** (`/w/[slug]/share`) — copy link, WhatsApp, native share sheet / email, expiry date. Link previews
+  show *"Ayesha, you have a birthday surprise! 🎁"* with the main photo.
 - **Admin** (`/admin`, password-protected) — usage stats and 14-day chart, sharing breakdown, wish moderation
   (reported first, approve / delete), template activate / reorder / describe, FAQ editor.
 - **Help, Privacy, Terms** pages (legal pages are templates — have them reviewed).
@@ -54,7 +67,8 @@ app/
   api/wishes/[slug]/report POST report
   api/events               POST anonymous analytics event
   api/cron/cleanup         GET (bearer) delete expired wishes + orphan photos
-components/WishCard.tsx    the single source of truth for how a wish looks
+components/Surprise.tsx    the interactive surprise (used live, in the creator preview, demo and thumbnails)
+components/Sticker.tsx     original SVG sticker character with moods
 lib/themes.ts              theme registry (visual definitions)
 lib/storage.ts             BlobStore + JsonStore interfaces, local-disk drivers
 lib/repo.ts                wishes, templates, FAQs, stats, cleanup
