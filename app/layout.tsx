@@ -4,7 +4,7 @@ import { SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: `${SITE_NAME} — Create a personal birthday wish`, template: `%s · ${SITE_NAME}` },
+  title: { default: `${SITE_NAME} — Personal wishes for every occasion`, template: `%s · ${SITE_NAME}` },
   description: SITE_TAGLINE,
   openGraph: { siteName: SITE_NAME, type: "website" },
   icons: { icon: "/icon.svg" },

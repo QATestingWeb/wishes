@@ -1,9 +1,11 @@
+import { DEFAULT_OCCASION_ID } from "@/lib/occasions";
 import type { Theme } from "@/lib/themes";
 import { Surprise } from "./Surprise";
 
 /** A scaled-down, non-interactive rendering of the opening screen in a given theme. */
 export function SurpriseThumb({
   theme,
+  occasionId = DEFAULT_OCCASION_ID,
   recipientName = "Ayesha",
   senderName = "Sara",
   scale = 0.42,
@@ -11,6 +13,7 @@ export function SurpriseThumb({
   inner = 390,
 }: {
   theme: Theme;
+  occasionId?: string;
   recipientName?: string;
   senderName?: string;
   scale?: number;
@@ -23,6 +26,7 @@ export function SurpriseThumb({
         <Surprise
           mode="thumb"
           theme={theme}
+          occasionId={occasionId}
           recipientName={recipientName}
           senderName={senderName}
           message=""

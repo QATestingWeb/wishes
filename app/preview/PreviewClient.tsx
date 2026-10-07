@@ -23,9 +23,9 @@ export function PreviewClient() {
           🎈
         </p>
         <h1 className="mt-4 font-display text-3xl font-semibold">Nothing to preview yet</h1>
-        <p className="mt-3 max-w-sm text-ink-soft">Create a birthday surprise first — it only takes a minute.</p>
+        <p className="mt-3 max-w-sm text-ink-soft">Create a surprise first — it only takes a minute.</p>
         <Link href="/create" className="mt-8 rounded-full bg-coral px-7 py-3.5 font-semibold text-white hover:bg-coral-dark">
-          Create a birthday wish
+          Create a wish
         </Link>
       </main>
     );
@@ -41,6 +41,7 @@ export function PreviewClient() {
       </Link>
       <Surprise
         mode="full"
+        occasionId={draft.occasionId}
         theme={getTheme(draft.themeId)}
         recipientName={draft.recipientName}
         senderName={draft.senderName}

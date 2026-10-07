@@ -9,7 +9,7 @@ export default function TermsPage() {
     <ProsePage title="Terms of Use" intro="Template — have this reviewed before launch.">
       <section>
         <h2>Using {SITE_NAME}</h2>
-        <p>{SITE_NAME} lets you build a personal birthday surprise in your browser. By using it, you agree to these terms.</p>
+        <p>{SITE_NAME} lets you build a personal surprise for any occasion in your browser. By using it, you agree to these terms.</p>
       </section>
       <section>
         <h2>Your content</h2>

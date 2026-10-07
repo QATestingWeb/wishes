@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { getOccasion, type Occasion } from "@/lib/occasions";
 import type { Theme } from "@/lib/themes";
 import type { QuizItem, Screen } from "@/lib/wish-types";
 import { Decorations } from "./Decorations";
@@ -12,6 +13,8 @@ export type SurpriseMode = "full" | "demo" | "preview" | "thumb";
 
 export interface SurpriseProps {
   theme: Theme;
+  /** An id from lib/occasions — it decides the wording and the finale. */
+  occasionId: string;
   recipientName: string;
   senderName: string;
   message: string;
@@ -24,9 +27,9 @@ export interface SurpriseProps {
   className?: string;
 }
 
-const NO_STEPS: { title: (n: string) => string; sub: (s: string) => string; mood: Mood }[] = [
+const NO_STEPS: { title: (n: string, o: Occasion) => string; sub: (s: string) => string; mood: Mood }[] = [
   {
-    title: (n) => `${n}, are you ready for your birthday surprise? 🥺`,
+    title: (n, o) => `${n}, are you ready for ${o.surprise}? 🥺`,
     sub: (s) => `${s} made something special, just for you.`,
     mood: "shy",
   },
@@ -39,6 +42,7 @@ const PAPER = { background: "#fffde9", color: "#2d2a26" };
 
 export function Surprise({
   theme,
+  occasionId,
   recipientName,
   senderName,
   message,
@@ -50,13 +54,14 @@ export function Surprise({
   className = "",
 }: SurpriseProps) {
   const c = theme.colors;
+  const occasion = getOccasion(occasionId);
   const isPreview = mode === "preview";
   const isThumb = mode === "thumb";
   const animated = !isThumb;
 
   const name = recipientName.trim() || (isPreview || isThumb ? "Their name" : "");
   const sender = senderName.trim() || (isPreview || isThumb ? "You" : "");
-  const msg = message.trim() || (isPreview ? "Your birthday message will appear here as a letter." : "");
+  const msg = message.trim() || (isPreview ? "Your message will appear here as a letter." : "");
   const pics = photos.length ? photos : isPreview || isThumb ? ["/sample-cake.svg"] : [];
 
   const [screen, setScreen] = useState<Screen>(forcedScreen ?? "ask");
@@ -105,7 +110,7 @@ export function Surprise({
       <>
         <Sticker mood={step.mood} size={112} animated={animated} />
         <h1 className="mt-5 text-[26px] leading-tight font-bold @md:text-4xl" style={{ fontFamily: theme.headingFont }}>
-          {step.title(name)}
+          {step.title(name, occasion)}
         </h1>
         <p className="mx-auto mt-3 max-w-sm text-sm @md:text-base" style={{ color: c.muted }}>
           {step.sub(sender)}
@@ -156,10 +161,10 @@ export function Surprise({
       <>
         <Sticker mood="party" size={112} animated={animated} />
         <h1 className="mt-5 text-[30px] leading-tight font-bold @md:text-5xl" style={{ fontFamily: theme.headingFont }}>
-          Happy Birthday, {name}! 🎂
+          {occasion.greeting}, {name}! {occasion.emoji}
         </h1>
         <p className="mx-auto mt-3 max-w-sm text-sm @md:text-base" style={{ color: c.muted }}>
-          Every moment with you deserves a celebration — and today, it&apos;s all about you.
+          {occasion.yaySub}
         </p>
         <div className="mt-7">
           <button type="button" onClick={() => go("hub")} {...btn({ fontSize: 14, padding: "0.7em 1.8em" })}>
@@ -174,7 +179,7 @@ export function Surprise({
     const gifts: { id: Screen; label: string; mood: Mood }[] = [
       { id: "letter", label: "A Letter", mood: "love" },
       { id: "photos", label: "Memories", mood: "cheeky" },
-      ...(quiz.length ? [{ id: "quiz" as Screen, label: "Birthday Quiz", mood: "shy" as Mood }] : []),
+      ...(quiz.length ? [{ id: "quiz" as Screen, label: occasion.quizLabel, mood: "shy" as Mood }] : []),
     ];
     content = (
       <>
@@ -235,7 +240,7 @@ export function Surprise({
         >
           <p className="text-2xl leading-8">Dear {name},</p>
           <Typewriter text={msg} instant={isPreview || isThumb} className="text-[22px] leading-8 whitespace-pre-line break-words" />
-          <p className="mt-8 text-2xl leading-8">Forever yours,</p>
+          <p className="mt-8 text-2xl leading-8">{occasion.signoff[0]}</p>
           <p className="text-2xl leading-8 font-bold">{sender}</p>
         </div>
         <div className="mt-6">
@@ -279,7 +284,7 @@ export function Surprise({
         <h1 className="text-[26px] leading-tight font-bold @md:text-4xl" style={{ fontFamily: theme.headingFont }}>
           Quiz for you 😚
         </h1>
-        <Quiz items={quiz} theme={theme} />
+        <Quiz items={quiz} theme={theme} label={occasion.quizLabel} />
         <div className="mt-6">
           <BackButton />
         </div>
@@ -291,6 +296,7 @@ export function Surprise({
     content = (
       <Finale
         theme={theme}
+        occasion={occasion}
         name={name}
         sender={sender}
         photo={pics[0]}
@@ -327,7 +333,7 @@ export function Surprise({
 
 /* ------------------------------------------------------------------ Quiz */
 
-function Quiz({ items, theme }: { items: QuizItem[]; theme: Theme }) {
+function Quiz({ items, theme, label }: { items: QuizItem[]; theme: Theme; label: string }) {
   const c = theme.colors;
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -346,7 +352,7 @@ function Quiz({ items, theme }: { items: QuizItem[]; theme: Theme }) {
     return (
       <div className="mx-auto mt-6 max-w-sm rounded-2xl px-5 py-6 wish-in" style={{ background: c.accentSoft }}>
         <p className="text-4xl">🎉</p>
-        <p className="mt-2 font-semibold">Yay! You passed the birthday test!</p>
+        <p className="mt-2 font-semibold">Yay! You passed the {label}!</p>
         <p className="mt-1 text-sm" style={{ color: c.muted }}>
           {items.length}/{items.length} — you know it all 💖
         </p>
@@ -408,6 +414,7 @@ function Quiz({ items, theme }: { items: QuizItem[]; theme: Theme }) {
 
 function Finale({
   theme,
+  occasion,
   name,
   sender,
   photo,
@@ -416,6 +423,7 @@ function Finale({
   onReplay,
 }: {
   theme: Theme;
+  occasion: Occasion;
   name: string;
   sender: string;
   photo?: string;
@@ -435,16 +443,18 @@ function Finale({
   }
 
   if (!revealed) {
+    const cake = occasion.finale === "cake";
+    const copy = FINALE_COPY[occasion.finale];
     return (
       <>
         <h1 className="text-[26px] leading-tight font-bold @md:text-4xl" style={{ fontFamily: theme.headingFont }}>
-          Make a wish, {name} ✨
+          {copy.title} {name} ✨
         </h1>
         <p className="mx-auto mt-2 max-w-xs text-sm" style={{ color: c.muted }}>
-          {blown ? "Your wish is on its way…" : "Close your eyes, make a wish, then tap the cake to blow out the candles."}
+          {blown ? copy.after : copy.prompt}
         </p>
-        <button type="button" onClick={blow} className="mx-auto mt-4 block" aria-label="Blow out the candles">
-          <Cake out={blown} />
+        <button type="button" onClick={blow} className="mx-auto mt-4 block" aria-label={copy.aria}>
+          {cake ? <Cake out={blown} /> : <GiftBox open={blown} accent={c.accent} />}
         </button>
         {!blown && (
           <button
@@ -453,7 +463,7 @@ function Finale({
             className="mt-2 rounded-full px-7 py-3 text-sm font-bold uppercase shadow-md"
             style={{ background: c.accent, color: c.onAccent }}
           >
-            Blow 🌬️
+            {copy.button}
           </button>
         )}
       </>
@@ -470,7 +480,7 @@ function Finale({
   return (
     <>
       <h1 className="text-[28px] leading-tight font-bold wish-in @md:text-5xl" style={{ fontFamily: theme.headingFont }}>
-        Happy Birthday, {name}! 💖
+        {occasion.greeting}, {name}! 💖
       </h1>
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -482,7 +492,7 @@ function Finale({
         />
       )}
       <p className="mt-6 text-sm wish-in" style={{ color: c.muted, animationDelay: "400ms" }}>
-        With all my love,
+        {occasion.signoff[1]}
       </p>
       <p className="text-2xl font-bold wish-in @md:text-3xl" style={{ fontFamily: theme.headingFont, animationDelay: "450ms" }}>
         {sender}
@@ -498,15 +508,67 @@ function Finale({
         </button>
         {(mode === "full" || mode === "demo") && (
           <Link
-            href="/create"
+            href={mode === "demo" ? `/create?occasion=${occasion.id}` : "/create"}
             className="rounded-full px-5 py-2.5 text-sm font-semibold shadow-md"
             style={{ background: c.accent, color: c.onAccent }}
           >
-            {mode === "demo" ? "🎂 Make one like this" : "✏️ Edit my wish"}
+            {mode === "demo" ? `${occasion.emoji} Make one like this` : "✏️ Edit my wish"}
           </Link>
         )}
       </div>
     </>
+  );
+}
+
+const FINALE_COPY = {
+  cake: {
+    title: "Make a wish,",
+    prompt: "Close your eyes, make a wish, then tap the cake to blow out the candles.",
+    after: "Your wish is on its way…",
+    button: "Blow 🌬️",
+    aria: "Blow out the candles",
+  },
+  gift: {
+    title: "One last thing,",
+    prompt: "There's one more gift waiting for you. Tap it to open.",
+    after: "Opening…",
+    button: "Open 🎁",
+    aria: "Open the gift",
+  },
+} as const;
+
+function GiftBox({ open, accent }: { open: boolean; accent: string }) {
+  return (
+    <svg viewBox="0 0 200 190" className="w-52 @md:w-60" aria-hidden>
+      <ellipse cx="100" cy="176" rx="76" ry="10" fill="#000" opacity="0.08" />
+      {open &&
+        [60, 100, 140].map((x, i) => (
+          <path
+            key={x}
+            d={`M${x} 78c-6-8 6-12 0-20s6-10 0-18`}
+            stroke="#ffd34d"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+            className="smoke"
+            style={{ animationDelay: `${i * 0.15}s` }}
+          />
+        ))}
+      <rect x="40" y="92" width="120" height="80" rx="10" fill="#fff4ea" />
+      <rect x="90" y="92" width="20" height="80" fill={accent} />
+      <g
+        style={{
+          transform: open ? "translate(22px, -40px) rotate(-16deg)" : "none",
+          transformOrigin: "100px 80px",
+          transition: "transform 0.6s cubic-bezier(0.3, 1.4, 0.5, 1)",
+        }}
+      >
+        <rect x="32" y="70" width="136" height="28" rx="8" fill="#ffe6d2" />
+        <rect x="90" y="70" width="20" height="28" fill={accent} />
+        <path d="M100 70c-28-34-52-8-24 0zM100 70c28-34 52-8 24 0z" fill={accent} />
+        <circle cx="100" cy="68" r="7" fill={accent} />
+      </g>
+    </svg>
   );
 }
 

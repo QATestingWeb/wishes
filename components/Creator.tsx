@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Theme } from "@/lib/themes";
 import { loadDraft, photoToDataUrl, saveDraft } from "@/lib/draft";
-import { defaultQuiz } from "@/lib/site";
+import { OCCASIONS, getOccasion } from "@/lib/occasions";
 import type { QuizItem, Screen } from "@/lib/wish-types";
 import { Surprise } from "./Surprise";
 import { SurpriseThumb } from "./SurpriseThumb";
@@ -21,20 +21,24 @@ interface Photo {
 
 interface Props {
   themes: Theme[];
+  /** Set when the visitor arrived from an occasion page; the occasion step is then skipped. */
+  initialOccasionId: string | null;
   initialThemeId: string;
-  suggestions: string[];
   limits: { maxPhotos: number; maxNameLength: number; maxMessageLength: number; maxQuiz: number };
 }
 
-const STEPS = ["Names", "Photos", "Letter", "Quiz", "Design", "Preview"] as const;
+const STEPS = ["Occasion", "Names", "Photos", "Letter", "Quiz", "Design", "Preview"] as const;
 // Which screen of the surprise the live preview shows while each step is edited.
-const PREVIEW_SCREEN: Screen[] = ["ask", "photos", "letter", "quiz", "ask", "ask"];
+const PREVIEW_SCREEN: Screen[] = ["ask", "ask", "photos", "letter", "quiz", "ask", "ask"];
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif";
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
-export function Creator({ themes, initialThemeId, suggestions, limits }: Props) {
+const sameQuiz = (a: QuizItem[], b: QuizItem[]) => JSON.stringify(a) === JSON.stringify(b);
+
+export function Creator({ themes, initialOccasionId, initialThemeId, limits }: Props) {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialOccasionId ? 1 : 0);
+  const [occasionId, setOccasionId] = useState(getOccasion(initialOccasionId ?? undefined).id);
   const [recipientName, setRecipient] = useState("");
   const [senderName, setSender] = useState("");
   const [message, setMessage] = useState("");
@@ -49,6 +53,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
   const replaceKey = useRef<string | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
+  const occasion = getOccasion(occasionId);
   const theme = themes.find((t) => t.id === themeId) ?? themes[0];
   const donePhotos = photos.filter((p) => p.status === "done");
   const shownPhotos = photos.filter((p) => p.status !== "error");
@@ -60,13 +65,21 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
   useEffect(() => {
     const d = loadDraft();
     if (d) {
+      // Arriving from a different occasion's page: keep names and photos, drop the old occasion's starter content.
+      const prev = getOccasion(d.occasionId);
+      const switched = !!initialOccasionId && initialOccasionId !== prev.id;
       setRecipient(d.recipientName ?? "");
       setSender(d.senderName ?? "");
-      setMessage(d.message ?? "");
-      if (themes.some((t) => t.id === d.themeId) && !new URLSearchParams(location.search).get("theme")) setThemeId(d.themeId);
+      setMessage(switched && prev.suggestions.includes(d.message) ? "" : (d.message ?? ""));
       setPhotos((d.photos ?? []).map((p) => ({ key: p.key, preview: p.src, caption: p.caption, status: "done" })));
-      if (Array.isArray(d.quiz)) setQuiz(d.quiz);
-      if (typeof d.step === "number") setStep(Math.min(d.step, STEPS.length - 1));
+      if (Array.isArray(d.quiz) && !(switched && sameQuiz(d.quiz, prev.quiz(d.senderName ?? "")))) setQuiz(d.quiz);
+      if (switched) {
+        setStep(1);
+      } else {
+        setOccasionId(prev.id);
+        if (themes.some((t) => t.id === d.themeId) && !new URLSearchParams(location.search).get("theme")) setThemeId(d.themeId);
+        if (typeof d.step === "number") setStep(Math.min(d.step, STEPS.length - 1));
+      }
     }
     setRestored(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,6 +89,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
     if (!restored) return;
     saveDraft({
       step,
+      occasionId,
       recipientName,
       senderName,
       message,
@@ -83,7 +97,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
       photos: donePhotos.map((p) => ({ key: p.key, src: p.preview, caption: p.caption ?? "" })),
       quiz,
     });
-  }, [restored, step, recipientName, senderName, message, themeId, photos, quiz]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [restored, step, occasionId, recipientName, senderName, message, themeId, photos, quiz]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---- photos (processed in the browser, never uploaded) ---- */
   async function processPhoto(file: File, key: string) {
@@ -151,19 +165,29 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
     });
   }
 
+  /* ---- occasion ---- */
+  function chooseOccasion(id: string) {
+    if (id === occasionId) return;
+    // Starter content belongs to the occasion it came from; anything the user wrote or picked is kept.
+    if (occasion.suggestions.includes(message)) setMessage("");
+    if (quiz && sameQuiz(quiz, occasion.quiz(senderName))) setQuiz(null);
+    if (themeId === occasion.defaultThemeId) setThemeId(getOccasion(id).defaultThemeId);
+    setOccasionId(id);
+  }
+
   /* ---- navigation ---- */
   function validate(s: number): string | null {
-    if (s === 0) {
-      if (!recipientName.trim()) return "Please enter the birthday person's name.";
+    if (s === 1) {
+      if (!recipientName.trim()) return "Please enter their name.";
       if (!senderName.trim()) return "Please enter your name.";
     }
-    if (s === 1) {
+    if (s === 2) {
       if (photos.some((p) => p.status === "processing")) return "Hang on — your photos are still loading.";
       if (photos.some((p) => p.status === "error")) return "Please remove or replace the photos that couldn't be read.";
       if (donePhotos.length === 0) return "Please add at least one photo.";
     }
-    if (s === 2 && !message.trim()) return "Please write your letter, or start from a suggestion.";
-    if (s === 3) {
+    if (s === 3 && !message.trim()) return "Please write your letter, or start from a suggestion.";
+    if (s === 4) {
       for (const [i, item] of quizItems.entries()) {
         if (!item.q.trim()) return `Question ${i + 1} needs some text (or remove it).`;
         if (item.options.some((o) => !o.trim())) return `Please fill in all three answers for question ${i + 1}.`;
@@ -174,7 +198,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
 
   function go(to: number) {
     // First visit to the quiz step: start from a personalised example quiz.
-    if (to >= 3 && quiz === null) setQuiz(defaultQuiz(senderName));
+    if (to >= 4 && quiz === null) setQuiz(occasion.quiz(senderName));
     if (to > step) {
       for (let s = step; s < to; s++) {
         const e = validate(s);
@@ -203,6 +227,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
     setSubmitting(true);
     saveDraft({
       step,
+      occasionId,
       recipientName,
       senderName,
       message,
@@ -256,16 +281,40 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
 
           <div className="rounded-[2rem] bg-white p-6 shadow-sm sm:p-9">
             {step === 0 && (
+              <div>
+                <StepTitle title="What's the occasion?" sub="Every occasion gets its own words, starter letter and finale." />
+                <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Occasion">
+                  {OCCASIONS.map((o) => (
+                    <button
+                      key={o.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={o.id === occasionId}
+                      onClick={() => chooseOccasion(o.id)}
+                      className={`rounded-2xl border-2 px-4 py-4 text-left transition ${o.id === occasionId ? "border-coral bg-coral-soft/50 ring-4 ring-coral/20" : "border-line hover:border-coral/50"}`}
+                    >
+                      <span className="text-3xl" aria-hidden>
+                        {o.emoji}
+                      </span>
+                      <span className="mt-2 block font-semibold">{o.name}</span>
+                      <span className="mt-0.5 block text-sm text-ink-soft">{o.tagline}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {step === 1 && (
               <div className="space-y-7">
-                <StepTitle title="Who's celebrating?" sub="Their name will be the star of the page." />
-                <Field label="Birthday person's name" htmlFor="recipient">
+                <StepTitle title="Who is it for?" sub="Their name will be the star of the page." />
+                <Field label={occasion.recipientLabel} htmlFor="recipient">
                   <input
                     id="recipient"
                     className={input}
                     value={recipientName}
                     maxLength={limits.maxNameLength}
                     onChange={(e) => setRecipient(e.target.value)}
-                    placeholder="e.g. Ayesha"
+                    placeholder={occasion.recipientPlaceholder}
                     autoComplete="off"
                     autoFocus
                     onKeyDown={(e) => e.key === "Enter" && document.getElementById("sender")?.focus()}
@@ -280,13 +329,13 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
                     onChange={(e) => setSender(e.target.value)}
                     placeholder="e.g. Sara, or The Khan Family"
                     autoComplete="name"
-                    onKeyDown={(e) => e.key === "Enter" && go(1)}
+                    onKeyDown={(e) => e.key === "Enter" && go(2)}
                   />
                 </Field>
               </div>
             )}
 
-            {step === 1 && (
+            {step === 2 && (
               <div>
                 <StepTitle
                   title="Add some photos"
@@ -382,7 +431,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
               </div>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <div>
                 <StepTitle
                   title="Write your letter"
@@ -395,7 +444,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
                     value={message}
                     maxLength={limits.maxMessageLength}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Happy birthday! …"
+                    placeholder={`${occasion.greeting}! …`}
                     aria-label="Your letter"
                     autoFocus
                   />
@@ -407,7 +456,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
                 </div>
                 <p className="mt-4 text-sm font-semibold">Need inspiration?</p>
                 <div className="mt-3 space-y-2">
-                  {suggestions.map((s) => (
+                  {occasion.suggestions.map((s) => (
                     <button
                       key={s}
                       type="button"
@@ -421,11 +470,11 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
               </div>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <QuizEditor quiz={quizItems} setQuiz={setQuiz} max={limits.maxQuiz} recipient={recipientName} />
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <div>
                 <StepTitle title="Choose a design" sub="Every design plays the same surprise — pick the look." />
                 <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3" role="radiogroup" aria-label="Design">
@@ -441,6 +490,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
                       <div className="flex justify-center" style={{ background: t.colors.background }}>
                         <SurpriseThumb
                           theme={t}
+                          occasionId={occasionId}
                           recipientName={recipientName || "Their name"}
                           senderName={senderName || "You"}
                           scale={0.38}
@@ -459,20 +509,21 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
               </div>
             )}
 
-            {step === 5 && (
+            {step === 6 && (
               <div>
                 <StepTitle title="Looking good!" sub="Check everything, then open the full-screen surprise." />
                 <dl className="mt-7 divide-y divide-line rounded-2xl border border-line">
-                  <Summary label="For" value={recipientName} onEdit={() => go(0)} />
-                  <Summary label="From" value={senderName} onEdit={() => go(0)} />
-                  <Summary label="Photos" value={`${donePhotos.length} photo${donePhotos.length === 1 ? "" : "s"}`} onEdit={() => go(1)} />
-                  <Summary label="Letter" value={message} onEdit={() => go(2)} clamp />
+                  <Summary label="Occasion" value={`${occasion.emoji} ${occasion.name}`} onEdit={() => go(0)} />
+                  <Summary label="For" value={recipientName} onEdit={() => go(1)} />
+                  <Summary label="From" value={senderName} onEdit={() => go(1)} />
+                  <Summary label="Photos" value={`${donePhotos.length} photo${donePhotos.length === 1 ? "" : "s"}`} onEdit={() => go(2)} />
+                  <Summary label="Letter" value={message} onEdit={() => go(3)} clamp />
                   <Summary
                     label="Quiz"
                     value={quizItems.length ? `${quizItems.length} question${quizItems.length === 1 ? "" : "s"}` : "No quiz"}
-                    onEdit={() => go(3)}
+                    onEdit={() => go(4)}
                   />
-                  <Summary label="Design" value={theme?.name ?? ""} onEdit={() => go(4)} />
+                  <Summary label="Design" value={theme?.name ?? ""} onEdit={() => go(5)} />
                 </dl>
               </div>
             )}
@@ -503,6 +554,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
                     mode="preview"
                     forcedScreen={PREVIEW_SCREEN[step]}
                     theme={theme}
+                    occasionId={occasionId}
                     recipientName={recipientName}
                     senderName={senderName}
                     message={message}
@@ -557,8 +609,9 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
 <Surprise
                     key={themeId}
                     mode="preview"
-                    forcedScreen={step === 5 ? "ask" : PREVIEW_SCREEN[step]}
+                    forcedScreen={PREVIEW_SCREEN[step]}
                     theme={theme}
+                    occasionId={occasionId}
                     recipientName={recipientName}
                     senderName={senderName}
                     message={message}

@@ -3,7 +3,7 @@
 import type { QuizItem } from "./wish-types";
 
 /**
- * The whole birthday wish lives in the browser — no server, no database.
+ * The whole wish lives in the browser — no server, no database.
  * It's kept in sessionStorage (so a refresh doesn't lose it) with an in-memory
  * fallback in case the photos are too big for the storage quota.
  */
@@ -16,6 +16,7 @@ export interface DraftPhoto {
 
 export interface Draft {
   step: number;
+  occasionId: string;
   recipientName: string;
   senderName: string;
   message: string;
@@ -24,7 +25,7 @@ export interface Draft {
   quiz: QuizItem[] | null;
 }
 
-const KEY = "birthday-wish-draft-v3";
+const KEY = "wish-draft-v4";
 let memory: Draft | null = null;
 
 export function loadDraft(): Draft | null {

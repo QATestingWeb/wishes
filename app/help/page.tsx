@@ -5,18 +5,18 @@ import { FAQS } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Help & FAQ",
-  description: "How to create and share a personalized birthday wish, and answers to common questions.",
+  description: "How to create and share a personalized wish for any occasion, and answers to common questions.",
 };
 
 export default function HelpPage() {
   const faqs = FAQS;
   return (
-    <ProsePage title="Help & FAQ" intro="Everything you need to know about making a birthday wish.">
+    <ProsePage title="Help & FAQ" intro="Everything you need to know about making a wish.">
       <section>
         <h2>How it works</h2>
         <ul className="mt-3">
-          <li>Tap <strong>Create a Birthday Wish</strong>.</li>
-          <li>Enter the birthday person&apos;s name and your name.</li>
+          <li>Tap <strong>Create a Wish</strong> and pick the occasion.</li>
+          <li>Enter their name and your name.</li>
           <li>Add one to four photos.</li>
           <li>Write your letter, or start from one of our suggestions.</li>
           <li>Add a fun quiz (optional), then choose a design.</li>
@@ -35,7 +35,7 @@ export default function HelpPage() {
         </div>
       </section>
       <Link href="/create" className="inline-block rounded-full bg-coral px-7 py-3.5 font-semibold text-white hover:bg-coral-dark">
-        Create a birthday wish
+        Create a wish
       </Link>
     </ProsePage>
   );
