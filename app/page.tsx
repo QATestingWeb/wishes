@@ -2,16 +2,13 @@ import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { Surprise } from "@/components/Surprise";
 import { SurpriseThumb } from "@/components/SurpriseThumb";
-import { defaultQuiz } from "@/lib/site";
-import { getActiveThemes, getFaqs } from "@/lib/repo";
-import { retentionDays } from "@/lib/site";
-
-export const dynamic = "force-dynamic";
+import { FAQS, defaultQuiz } from "@/lib/site";
+import { THEMES } from "@/lib/themes";
 
 const STEPS = [
   { n: "1", title: "Add names & photos", body: "Who's the birthday star, who's it from, and a favourite picture or four." },
   { n: "2", title: "Write a letter & a quiz", body: "Your message becomes a handwritten letter. Add a cheeky quiz if you like." },
-  { n: "3", title: "Pick a design & share", body: "They get a playful surprise: a YES they can't refuse, gifts to open and a cake to blow out." },
+  { n: "3", title: "Pick a design & play", body: "Watch the full surprise: a YES they can't refuse, gifts to open and a cake to blow out." },
 ];
 
 function CreateButton({ className = "" }: { className?: string }) {
@@ -28,8 +25,9 @@ function CreateButton({ className = "" }: { className?: string }) {
   );
 }
 
-export default async function Home() {
-  const [themes, faqs] = await Promise.all([getActiveThemes(), getFaqs()]);
+export default function Home() {
+  const themes = THEMES;
+  const faqs = FAQS;
   const hero = themes[0];
 
   return (
@@ -47,7 +45,7 @@ export default async function Home() {
             </h1>
             <p className="mt-5 max-w-lg text-lg text-ink-soft">
               Not just a card — a little interactive surprise. They tap through a question they can&apos;t say no to,
-              open your gifts, read your letter, and blow out the candles. All from one link.
+              open your gifts, read your letter, and blow out the candles.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <CreateButton />
@@ -129,10 +127,10 @@ export default async function Home() {
             <div className="rounded-3xl bg-ink p-8 text-cream">
               <h2 className="font-display text-2xl font-semibold">Private by design</h2>
               <ul className="mt-5 space-y-3 text-cream/80">
-                <li>• Only people with the link can open a wish.</li>
-                <li>• Wish pages never appear in search engines.</li>
-                <li>• Photo location data is removed on upload.</li>
-                <li>• Everything is deleted after {retentionDays()} days.</li>
+                <li>• No account, no sign-up.</li>
+                <li>• Photos never leave your device.</li>
+                <li>• Nothing is stored on a server.</li>
+                <li>• Close the tab and it&apos;s gone.</li>
               </ul>
             </div>
             <div>

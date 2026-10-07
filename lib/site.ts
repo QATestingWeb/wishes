@@ -7,17 +7,10 @@ export function siteUrl(): string {
 
 export const LIMITS = {
   maxPhotos: 4,
-  maxUploadBytes: 10 * 1024 * 1024, // raw upload limit (server)
   maxNameLength: 40,
   maxMessageLength: 1500,
-  photoMaxDimension: 1600,
   maxQuiz: 5,
 } as const;
-
-export function retentionDays(): number {
-  const n = Number(process.env.WISH_RETENTION_DAYS);
-  return Number.isFinite(n) && n > 0 ? n : 30;
-}
 
 export const MESSAGE_SUGGESTIONS = [
   "Happy birthday! Wishing you a year full of laughter, adventure and everything that makes you smile.",
@@ -35,3 +28,20 @@ export function defaultQuiz(sender: string) {
     { q: "What's the best part of today? 🎂", options: ["The cake", "The gifts", "Celebrating YOU"], answer: 2 },
   ];
 }
+
+export const FAQS = [
+  { q: "Is it free?", a: "Yes. Creating a birthday surprise is completely free — no sign-up needed." },
+  {
+    q: "Are my photos uploaded anywhere?",
+    a: "No. Photos are resized on your own device and stay in your browser. Nothing is sent to a server.",
+  },
+  {
+    q: "What happens if I refresh the page?",
+    a: "Your wish is kept in this browser tab, so a refresh won't lose it. Closing the tab clears it.",
+  },
+  { q: "How many photos can I add?", a: "Up to 4 photos — JPG, PNG, WebP or GIF." },
+  {
+    q: "Can I change it after previewing?",
+    a: "Yes — tap “Edit my wish” at the end of the surprise to go back and change anything.",
+  },
+];

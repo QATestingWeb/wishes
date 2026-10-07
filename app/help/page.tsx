@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ProsePage } from "@/components/SiteChrome";
-import { getFaqs } from "@/lib/repo";
+import { FAQS } from "@/lib/site";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Help & FAQ",
   description: "How to create and share a personalized birthday wish, and answers to common questions.",
 };
 
-export default async function HelpPage() {
-  const faqs = await getFaqs();
+export default function HelpPage() {
+  const faqs = FAQS;
   return (
     <ProsePage title="Help & FAQ" intro="Everything you need to know about making a birthday wish.">
       <section>
@@ -19,9 +18,9 @@ export default async function HelpPage() {
           <li>Tap <strong>Create a Birthday Wish</strong>.</li>
           <li>Enter the birthday person&apos;s name and your name.</li>
           <li>Add one to four photos.</li>
-          <li>Write a message, or pick one of our suggestions.</li>
-          <li>Choose a design, check the preview, and create your page.</li>
-          <li>Share the link — WhatsApp, email, or wherever you like.</li>
+          <li>Write your letter, or start from one of our suggestions.</li>
+          <li>Add a fun quiz (optional), then choose a design.</li>
+          <li>Tap <strong>See my surprise</strong> to play it full screen.</li>
         </ul>
       </section>
       <section>

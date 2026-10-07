@@ -7,7 +7,8 @@ import type { QuizItem, Screen } from "@/lib/wish-types";
 import { Decorations } from "./Decorations";
 import { Sticker, type Mood } from "./Sticker";
 
-export type SurpriseMode = "live" | "demo" | "preview" | "thumb";
+/** full = the finished full-screen surprise · demo = landing page · preview = creator side panel · thumb = static thumbnail */
+export type SurpriseMode = "full" | "demo" | "preview" | "thumb";
 
 export interface SurpriseProps {
   theme: Theme;
@@ -20,7 +21,6 @@ export interface SurpriseProps {
   mode: SurpriseMode;
   /** Creator preview: jump to the screen that matches the step being edited. */
   forcedScreen?: Screen;
-  slug?: string;
   className?: string;
 }
 
@@ -47,7 +47,6 @@ export function Surprise({
   quiz = [],
   mode,
   forcedScreen,
-  slug,
   className = "",
 }: SurpriseProps) {
   const c = theme.colors;
@@ -78,7 +77,7 @@ export function Surprise({
     if (["letter", "photos", "quiz"].includes(next)) setVisited((v) => new Set(v).add(next));
     setScreen(next);
     rootRef.current?.scrollTo?.({ top: 0 });
-    if (mode === "live" || mode === "demo") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (mode === "full" || mode === "demo") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const btn = (style: CSSProperties = {}) => ({
@@ -296,7 +295,6 @@ export function Surprise({
         sender={sender}
         photo={pics[0]}
         mode={mode}
-        slug={slug}
         onBurst={() => setBurst((b) => b + 1)}
         onReplay={() => {
           setNoCount(0);
@@ -414,7 +412,6 @@ function Finale({
   sender,
   photo,
   mode,
-  slug,
   onBurst,
   onReplay,
 }: {
@@ -423,14 +420,12 @@ function Finale({
   sender: string;
   photo?: string;
   mode: SurpriseMode;
-  slug?: string;
   onBurst: () => void;
   onReplay: () => void;
 }) {
   const c = theme.colors;
   const [blown, setBlown] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [report, setReport] = useState<"idle" | "confirm" | "done">("idle");
 
   function blow() {
     if (blown) return;
@@ -501,44 +496,16 @@ function Finale({
         >
           ↺ Watch again
         </button>
-        {(mode === "live" || mode === "demo") && (
+        {(mode === "full" || mode === "demo") && (
           <Link
             href="/create"
             className="rounded-full px-5 py-2.5 text-sm font-semibold shadow-md"
             style={{ background: c.accent, color: c.onAccent }}
           >
-            🎂 {mode === "demo" ? "Make one like this" : "Make one for someone"}
+            {mode === "demo" ? "🎂 Make one like this" : "✏️ Edit my wish"}
           </Link>
         )}
       </div>
-      {mode === "live" && slug && (
-        <p className="mt-6 text-xs" style={{ color: c.muted }}>
-          {report === "idle" && (
-            <button type="button" className="underline" onClick={() => setReport("confirm")}>
-              Report this page
-            </button>
-          )}
-          {report === "confirm" && (
-            <>
-              Report as inappropriate?{" "}
-              <button
-                type="button"
-                className="font-semibold underline"
-                onClick={async () => {
-                  await fetch(`/api/wishes/${slug}/report`, { method: "POST" }).catch(() => {});
-                  setReport("done");
-                }}
-              >
-                Yes, report
-              </button>{" "}
-              <button type="button" className="underline" onClick={() => setReport("idle")}>
-                Cancel
-              </button>
-            </>
-          )}
-          {report === "done" && "Thanks — we'll review it."}
-        </p>
-      )}
     </>
   );
 }

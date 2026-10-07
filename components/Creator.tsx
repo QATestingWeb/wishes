@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Theme } from "@/lib/themes";
-import { shrinkImage, trackClient } from "@/lib/client";
+import { loadDraft, photoToDataUrl, saveDraft } from "@/lib/draft";
 import { defaultQuiz } from "@/lib/site";
 import type { QuizItem, Screen } from "@/lib/wish-types";
 import { Surprise } from "./Surprise";
@@ -13,10 +13,8 @@ import { Logo } from "./SiteChrome";
 
 interface Photo {
   key: string;
-  status: "uploading" | "done" | "error";
-  preview: string; // local object URL or server URL
-  id?: string;
-  url?: string;
+  status: "processing" | "done" | "error";
+  preview: string; // data URL once processed
   error?: string;
   caption?: string;
 }
@@ -31,8 +29,8 @@ interface Props {
 const STEPS = ["Names", "Photos", "Letter", "Quiz", "Design", "Preview"] as const;
 // Which screen of the surprise the live preview shows while each step is edited.
 const PREVIEW_SCREEN: Screen[] = ["ask", "photos", "letter", "quiz", "ask", "ask"];
-const DRAFT_KEY = "wish-draft-v2";
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif";
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 export function Creator({ themes, initialThemeId, suggestions, limits }: Props) {
   const router = useRouter();
@@ -58,75 +56,48 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
   const previewCaptions = shownPhotos.map((p) => p.caption ?? "");
   const quizItems = quiz ?? [];
 
-  /* ---- draft persistence (survives an accidental refresh) ---- */
+  /* ---- draft persistence (in the browser only) ---- */
   useEffect(() => {
-    trackClient("creator_started");
-    try {
-      const raw = sessionStorage.getItem(DRAFT_KEY);
-      if (raw) {
-        const d = JSON.parse(raw);
-        setRecipient(d.recipientName ?? "");
-        setSender(d.senderName ?? "");
-        setMessage(d.message ?? "");
-        if (themes.some((t) => t.id === d.themeId) && !new URLSearchParams(location.search).get("theme")) setThemeId(d.themeId);
-        if (Array.isArray(d.photos))
-          setPhotos(
-            d.photos.map((p: { id: string; url: string; caption?: string }) => ({
-              key: p.id,
-              id: p.id,
-              url: p.url,
-              preview: p.url,
-              caption: p.caption ?? "",
-              status: "done",
-            })),
-          );
-        if (Array.isArray(d.quiz)) setQuiz(d.quiz);
-        if (typeof d.step === "number") setStep(Math.min(d.step, STEPS.length - 1));
-      }
-    } catch {}
+    const d = loadDraft();
+    if (d) {
+      setRecipient(d.recipientName ?? "");
+      setSender(d.senderName ?? "");
+      setMessage(d.message ?? "");
+      if (themes.some((t) => t.id === d.themeId) && !new URLSearchParams(location.search).get("theme")) setThemeId(d.themeId);
+      setPhotos((d.photos ?? []).map((p) => ({ key: p.key, preview: p.src, caption: p.caption, status: "done" })));
+      if (Array.isArray(d.quiz)) setQuiz(d.quiz);
+      if (typeof d.step === "number") setStep(Math.min(d.step, STEPS.length - 1));
+    }
     setRestored(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!restored) return;
-    try {
-      sessionStorage.setItem(
-        DRAFT_KEY,
-        JSON.stringify({
-          step,
-          recipientName,
-          senderName,
-          message,
-          themeId,
-          photos: donePhotos.map((p) => ({ id: p.id, url: p.url, caption: p.caption })),
-          quiz,
-        }),
-      );
-    } catch {}
+    saveDraft({
+      step,
+      recipientName,
+      senderName,
+      message,
+      themeId,
+      photos: donePhotos.map((p) => ({ key: p.key, src: p.preview, caption: p.caption ?? "" })),
+      quiz,
+    });
   }, [restored, step, recipientName, senderName, message, themeId, photos, quiz]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ---- photos ---- */
-  async function upload(file: File, key: string) {
-    if (!file.type.startsWith("image/") && file.type !== "") {
+  /* ---- photos (processed in the browser, never uploaded) ---- */
+  async function processPhoto(file: File, key: string) {
+    if (file.type && !file.type.startsWith("image/")) {
       return updatePhoto(key, { status: "error", error: "That file isn't a photo." });
     }
-    if (file.size > 30 * 1024 * 1024) {
-      return updatePhoto(key, { status: "error", error: "That photo is too large." });
+    if (file.size > MAX_FILE_BYTES) {
+      return updatePhoto(key, { status: "error", error: "Too large — max 20 MB." });
     }
     try {
-      const blob = await shrinkImage(file);
-      if (blob.size > 10 * 1024 * 1024) {
-        return updatePhoto(key, { status: "error", error: "Too large — max 10 MB." });
-      }
-      const fd = new FormData();
-      fd.append("photo", blob, file.name || "photo.jpg");
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return updatePhoto(key, { status: "error", error: data.error || "Upload failed." });
-      updatePhoto(key, { status: "done", id: data.id, url: data.url });
+      const src = await photoToDataUrl(file);
+      updatePhoto(key, { status: "done", preview: src });
     } catch {
-      updatePhoto(key, { status: "error", error: "Upload failed — check your connection." });
+      updatePhoto(key, { status: "error", error: "Couldn't read this photo — try a JPG or PNG." });
     }
   }
 
@@ -145,9 +116,11 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
       const f = files[0];
       const newKey = crypto.randomUUID();
       setPhotos((ps) =>
-        ps.map((p) => (p.key === key ? { key: newKey, status: "uploading", preview: URL.createObjectURL(f) } : p)),
+        ps.map((p) =>
+          p.key === key ? { key: newKey, status: "processing", preview: URL.createObjectURL(f), caption: p.caption } : p,
+        ),
       );
-      upload(f, newKey);
+      processPhoto(f, newKey);
       return;
     }
 
@@ -156,10 +129,10 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
     if (files.length > room) setError(`Only the first ${room} photo${room > 1 ? "s were" : " was"} added (max ${limits.maxPhotos}).`);
     const added = files.slice(0, room).map((f) => ({
       file: f,
-      photo: { key: crypto.randomUUID(), status: "uploading" as const, preview: URL.createObjectURL(f) },
+      photo: { key: crypto.randomUUID(), status: "processing" as const, preview: URL.createObjectURL(f) },
     }));
     setPhotos((ps) => [...ps, ...added.map((a) => a.photo)]);
-    added.forEach((a) => upload(a.file, a.photo.key));
+    added.forEach((a) => processPhoto(a.file, a.photo.key));
   }
 
   function pick(replace?: string) {
@@ -185,8 +158,8 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
       if (!senderName.trim()) return "Please enter your name.";
     }
     if (s === 1) {
-      if (photos.some((p) => p.status === "uploading")) return "Hang on — your photos are still uploading.";
-      if (photos.some((p) => p.status === "error")) return "Please remove or replace the photos that didn't upload.";
+      if (photos.some((p) => p.status === "processing")) return "Hang on — your photos are still loading.";
+      if (photos.some((p) => p.status === "error")) return "Please remove or replace the photos that couldn't be read.";
       if (donePhotos.length === 0) return "Please add at least one photo.";
     }
     if (s === 2 && !message.trim()) return "Please write your letter, or start from a suggestion.";
@@ -217,7 +190,8 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  async function submit() {
+  /** Final step: open the full-screen surprise. Nothing is sent anywhere. */
+  function submit() {
     for (let s = 0; s < STEPS.length - 1; s++) {
       const e = validate(s);
       if (e) {
@@ -227,31 +201,16 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
       }
     }
     setSubmitting(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/wishes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientName,
-          senderName,
-          message,
-          themeId,
-          photoIds: donePhotos.map((p) => p.id),
-          captions: donePhotos.map((p) => p.caption ?? ""),
-          quiz: quizItems,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
-      try {
-        sessionStorage.removeItem(DRAFT_KEY);
-      } catch {}
-      router.push(`/w/${data.slug}/share`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
-      setSubmitting(false);
-    }
+    saveDraft({
+      step,
+      recipientName,
+      senderName,
+      message,
+      themeId,
+      photos: donePhotos.map((p) => ({ key: p.key, src: p.preview, caption: p.caption ?? "" })),
+      quiz: quizItems,
+    });
+    router.push("/preview");
   }
 
   const input =
@@ -356,7 +315,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
                           alt=""
                           className={`h-full w-full object-cover ${p.status !== "done" ? "opacity-50" : ""}`}
                         />
-                        {p.status === "uploading" && (
+                        {p.status === "processing" && (
                           <span className="absolute inset-0 flex items-center justify-center">
                             <span className="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-coral" />
                           </span>
@@ -412,13 +371,13 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
                       </span>
                       <span className="font-semibold">{photos.length ? "Add more" : "Choose photos"}</span>
                       {photos.length === 0 && (
-                        <span className="text-sm text-ink-soft">JPG, PNG or WebP · up to 10 MB each</span>
+                        <span className="text-sm text-ink-soft">JPG, PNG or WebP · stays on your device</span>
                       )}
                     </button>
                   )}
                 </div>
                 <p className="mt-6 text-sm text-ink-soft">
-                  Tap a photo to replace it. We remove hidden location data from every photo.
+                  Tap a photo to replace it. Photos are resized on your device and never uploaded.
                 </p>
               </div>
             )}
@@ -502,7 +461,7 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
 
             {step === 5 && (
               <div>
-                <StepTitle title="Looking good!" sub="Play through it in the preview, then create your link." />
+                <StepTitle title="Looking good!" sub="Check everything, then open the full-screen surprise." />
                 <dl className="mt-7 divide-y divide-line rounded-2xl border border-line">
                   <Summary label="For" value={recipientName} onEdit={() => go(0)} />
                   <Summary label="From" value={senderName} onEdit={() => go(0)} />
@@ -515,13 +474,6 @@ export function Creator({ themes, initialThemeId, suggestions, limits }: Props) 
                   />
                   <Summary label="Design" value={theme?.name ?? ""} onEdit={() => go(4)} />
                 </dl>
-                <button
-                  type="button"
-                  onClick={() => setShowPreview(true)}
-                  className="mt-6 w-full rounded-2xl border-2 border-dashed border-coral/50 bg-coral-soft/40 px-4 py-4 font-semibold text-coral-dark lg:hidden"
-                >
-                  ▶ Play the surprise first
-                </button>
               </div>
             )}
 
@@ -685,7 +637,7 @@ function NextButton({
       disabled={submitting}
       className={`h-14 rounded-full bg-coral px-6 text-lg whitespace-nowrap font-semibold text-white shadow-lg shadow-coral/25 transition hover:bg-coral-dark active:scale-[0.98] disabled:opacity-60 ${full ? "flex-1" : ""}`}
     >
-      {submitting ? "Creating…" : last ? "Create my wish 🎉" : full ? "Next" : `Next: ${STEPS[step + 1]}`}
+      {submitting ? "Opening…" : last ? "See my surprise 🎉" : full ? "Next" : `Next: ${STEPS[step + 1]}`}
     </button>
   );
 }
