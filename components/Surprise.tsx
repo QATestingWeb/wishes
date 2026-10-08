@@ -8,8 +8,8 @@ import type { QuizItem, Screen } from "@/lib/wish-types";
 import { Decorations } from "./Decorations";
 import { Sticker, type Mood } from "./Sticker";
 
-/** full = the finished full-screen surprise · demo = landing page · preview = creator side panel · thumb = static thumbnail */
-export type SurpriseMode = "full" | "demo" | "preview" | "thumb";
+/** full = the creator's full-screen preview · shared = what the recipient opens · demo = landing page · preview = creator side panel · thumb = static thumbnail */
+export type SurpriseMode = "full" | "shared" | "demo" | "preview" | "thumb";
 
 export interface SurpriseProps {
   theme: Theme;
@@ -82,7 +82,7 @@ export function Surprise({
     if (["letter", "photos", "quiz"].includes(next)) setVisited((v) => new Set(v).add(next));
     setScreen(next);
     rootRef.current?.scrollTo?.({ top: 0 });
-    if (mode === "full" || mode === "demo") window.scrollTo({ top: 0, behavior: "smooth" });
+    if (mode === "full" || mode === "shared" || mode === "demo") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const btn = (style: CSSProperties = {}) => ({
@@ -506,13 +506,13 @@ function Finale({
         >
           ↺ Watch again
         </button>
-        {(mode === "full" || mode === "demo") && (
+        {(mode === "full" || mode === "shared" || mode === "demo") && (
           <Link
-            href={mode === "demo" ? `/create?occasion=${occasion.id}` : "/create"}
+            href={mode === "full" ? "/create" : `/create?occasion=${occasion.id}`}
             className="rounded-full px-5 py-2.5 text-sm font-semibold shadow-md"
             style={{ background: c.accent, color: c.onAccent }}
           >
-            {mode === "demo" ? `${occasion.emoji} Make one like this` : "✏️ Edit my wish"}
+            {mode === "full" ? "✏️ Edit or share" : mode === "shared" ? `${occasion.emoji} Make your own` : `${occasion.emoji} Make one like this`}
           </Link>
         )}
       </div>

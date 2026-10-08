@@ -37,7 +37,7 @@ export function PreviewClient() {
         href="/create"
         className="fixed top-3 left-3 z-30 rounded-full bg-white/85 px-4 py-2 text-sm font-semibold text-ink shadow-md backdrop-blur hover:bg-white"
       >
-        ← Edit
+        ← Edit or share
       </Link>
       <Surprise
         mode="full"

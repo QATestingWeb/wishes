@@ -20,7 +20,7 @@ export default function HelpPage() {
           <li>Add one to four photos.</li>
           <li>Write your letter, or start from one of our suggestions.</li>
           <li>Add a fun quiz (optional), then choose a design.</li>
-          <li>Tap <strong>See my surprise</strong> to play it full screen.</li>
+          <li>Tap <strong>Get my link</strong> and send it — or <strong>Preview</strong> to play it full screen first.</li>
         </ul>
       </section>
       <section>

@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Theme } from "@/lib/themes";
-import { loadDraft, photoToDataUrl, saveDraft } from "@/lib/draft";
+import { loadDraft, photoToDataUrl, saveDraft, type Draft } from "@/lib/draft";
 import { OCCASIONS, getOccasion } from "@/lib/occasions";
+import { createShareLink } from "@/lib/share-client";
 import type { QuizItem, Screen } from "@/lib/wish-types";
+import { SharePanel } from "./SharePanel";
 import { Surprise } from "./Surprise";
 import { SurpriseThumb } from "./SurpriseThumb";
 import { Logo } from "./SiteChrome";
@@ -27,7 +29,7 @@ interface Props {
   limits: { maxPhotos: number; maxNameLength: number; maxMessageLength: number; maxQuiz: number };
 }
 
-const STEPS = ["Occasion", "Names", "Photos", "Letter", "Quiz", "Design", "Preview"] as const;
+const STEPS = ["Occasion", "Names", "Photos", "Letter", "Quiz", "Design", "Share"] as const;
 // Which screen of the surprise the live preview shows while each step is edited.
 const PREVIEW_SCREEN: Screen[] = ["ask", "ask", "photos", "letter", "quiz", "ask", "ask"];
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif";
@@ -47,6 +49,8 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
   const [quiz, setQuiz] = useState<QuizItem[] | null>(null); // null = not set up yet
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [restored, setRestored] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -210,22 +214,22 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
       }
     }
     setError(null);
+    setShareUrl(null);
     setStep(to);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  /** Final step: open the full-screen surprise. Nothing is sent anywhere. */
-  function submit() {
+  /** Checks every step and returns the finished wish, or jumps to the first step that needs fixing. */
+  function finished(): Draft | null {
     for (let s = 0; s < STEPS.length - 1; s++) {
       const e = validate(s);
       if (e) {
         setStep(s);
         setError(e);
-        return;
+        return null;
       }
     }
-    setSubmitting(true);
-    saveDraft({
+    const draft: Draft = {
       step,
       occasionId,
       recipientName,
@@ -234,8 +238,33 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
       themeId,
       photos: donePhotos.map((p) => ({ key: p.key, src: p.preview, caption: p.caption ?? "" })),
       quiz: quizItems,
-    });
+    };
+    saveDraft(draft);
+    return draft;
+  }
+
+  /** Open the full-screen surprise on this device. Nothing is sent anywhere. */
+  function openPreview() {
+    if (!finished()) return;
+    setSubmitting(true);
     router.push("/preview");
+  }
+
+  /** Final step: upload the wish and its photos, and get the link to send. */
+  async function share() {
+    if (sharing) return;
+    const draft = finished();
+    if (!draft) return;
+    setError(null);
+    setSharing(true);
+    try {
+      setShareUrl(await createShareLink(draft));
+      topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setSharing(false);
+    }
   }
 
   const input =
@@ -426,7 +455,7 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
                   )}
                 </div>
                 <p className="mt-6 text-sm text-ink-soft">
-                  Tap a photo to replace it. Photos are resized on your device and never uploaded.
+                  Tap a photo to replace it. Photos are resized on your device and only uploaded when you get a link.
                 </p>
               </div>
             )}
@@ -509,9 +538,32 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
               </div>
             )}
 
-            {step === 6 && (
+            {step === 6 && shareUrl && (
               <div>
-                <StepTitle title="Looking good!" sub="Check everything, then open the full-screen surprise." />
+                <StepTitle
+                  title="Your link is ready! 🎉"
+                  sub={`Send it to ${recipientName.trim()} — anyone with the link can open the surprise.`}
+                />
+                <div className="mt-7">
+                  <SharePanel url={shareUrl} recipientName={recipientName.trim()} occasion={occasion} />
+                </div>
+                <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm font-semibold">
+                  <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="text-coral hover:underline">
+                    Open it the way they&apos;ll see it ↗
+                  </a>
+                  <button type="button" onClick={() => setShareUrl(null)} className="text-ink-soft hover:text-ink">
+                    ✏️ Change something
+                  </button>
+                </div>
+                <p className="mt-4 text-sm text-ink-soft">
+                  Changes you make later need a new link — this one keeps playing what you shared.
+                </p>
+              </div>
+            )}
+
+            {step === 6 && !shareUrl && (
+              <div>
+                <StepTitle title="Looking good!" sub="Check everything, then get your link to send." />
                 <dl className="mt-7 divide-y divide-line rounded-2xl border border-line">
                   <Summary label="Occasion" value={`${occasion.emoji} ${occasion.name}`} onEdit={() => go(0)} />
                   <Summary label="For" value={recipientName} onEdit={() => go(1)} />
@@ -525,6 +577,10 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
                   />
                   <Summary label="Design" value={theme?.name ?? ""} onEdit={() => go(5)} />
                 </dl>
+                <p className="mt-4 text-sm text-ink-soft">
+                  Getting a link uploads this wish and its photos so {recipientName.trim() || "they"} can open it on their
+                  own phone.
+                </p>
               </div>
             )}
 
@@ -537,7 +593,10 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
             {/* Desktop actions */}
             <div className="mt-9 hidden items-center justify-between lg:flex">
               <BackButton step={step} onBack={() => go(step - 1)} />
-              <NextButton step={step} submitting={submitting} onNext={() => go(step + 1)} onSubmit={submit} />
+              <div className="flex items-center gap-3">
+                {step === STEPS.length - 1 && !shareUrl && <PreviewButton submitting={submitting} onClick={openPreview} />}
+                {!shareUrl && <NextButton step={step} busy={sharing} onNext={() => go(step + 1)} onSubmit={share} />}
+              </div>
             </div>
           </div>
         </div>
@@ -583,7 +642,7 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
               ←
             </button>
           ) : null}
-          {step < STEPS.length - 1 && (
+          {step < STEPS.length - 1 ? (
             <button
               type="button"
               onClick={() => setShowPreview(true)}
@@ -591,8 +650,14 @@ export function Creator({ themes, initialOccasionId, initialThemeId, limits }: P
             >
               Preview
             </button>
+          ) : (
+            !shareUrl && <PreviewButton submitting={submitting} onClick={openPreview} />
           )}
-          <NextButton step={step} submitting={submitting} onNext={() => go(step + 1)} onSubmit={submit} full />
+          {shareUrl ? (
+            <span className="flex-1 text-center text-sm font-medium text-ink-soft">Link ready — send it above ☝️</span>
+          ) : (
+            <NextButton step={step} busy={sharing} onNext={() => go(step + 1)} onSubmit={share} full />
+          )}
         </div>
       </div>
 
@@ -669,15 +734,28 @@ function BackButton({ step, onBack }: { step: number; onBack: () => void }) {
   );
 }
 
+function PreviewButton({ submitting, onClick }: { submitting: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={submitting}
+      className="h-14 shrink-0 rounded-full border-2 border-line px-4 text-sm font-semibold disabled:opacity-60"
+    >
+      {submitting ? "Opening…" : "Preview"}
+    </button>
+  );
+}
+
 function NextButton({
   step,
-  submitting,
+  busy,
   onNext,
   onSubmit,
   full,
 }: {
   step: number;
-  submitting: boolean;
+  busy: boolean;
   onNext: () => void;
   onSubmit: () => void;
   full?: boolean;
@@ -687,10 +765,10 @@ function NextButton({
     <button
       type="button"
       onClick={last ? onSubmit : onNext}
-      disabled={submitting}
+      disabled={busy}
       className={`h-14 rounded-full bg-coral px-6 text-lg whitespace-nowrap font-semibold text-white shadow-lg shadow-coral/25 transition hover:bg-coral-dark active:scale-[0.98] disabled:opacity-60 ${full ? "flex-1" : ""}`}
     >
-      {submitting ? "Opening…" : last ? "See my surprise 🎉" : full ? "Next" : `Next: ${STEPS[step + 1]}`}
+      {busy ? "Creating link…" : last ? "Get my link 🔗" : full ? "Next" : `Next: ${STEPS[step + 1]}`}
     </button>
   );
 }

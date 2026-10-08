@@ -19,16 +19,24 @@ export const FAQS = [
     a: "Birthdays, anniversaries, weddings, Eid, graduations, new babies, get well soon, thank you and more — pick one in the first step.",
   },
   {
+    q: "How do I send it?",
+    a: "On the last step tap “Get my link”. You get a link to copy or send on WhatsApp — whoever opens it sees the full surprise on their own phone.",
+  },
+  {
     q: "Are my photos uploaded anywhere?",
-    a: "No. Photos are resized on your own device and stay in your browser. Nothing is sent to a server.",
+    a: "Only when you tap “Get my link”. Until then photos are resized on your own device and stay in your browser. Getting a link uploads the wish and its photos so the other person can open it.",
+  },
+  {
+    q: "Who can see a shared wish?",
+    a: "Anyone who has the link. Links are long and random, and shared wishes are hidden from search engines.",
   },
   {
     q: "What happens if I refresh the page?",
-    a: "Your wish is kept in this browser tab, so a refresh won't lose it. Closing the tab clears it.",
+    a: "Your draft is kept in this browser tab, so a refresh won't lose it. Closing the tab clears the draft — links you already created keep working.",
   },
   { q: "How many photos can I add?", a: "Up to 4 photos — JPG, PNG, WebP or GIF." },
   {
-    q: "Can I change it after previewing?",
-    a: "Yes — tap “Edit my wish” at the end of the surprise to go back and change anything.",
+    q: "Can I change it after sharing?",
+    a: "A link keeps playing what you shared. Change anything in the wizard, then tap “Get my link” again for a new link.",
   },
 ];

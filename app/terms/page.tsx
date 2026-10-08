@@ -9,14 +9,15 @@ export default function TermsPage() {
     <ProsePage title="Terms of Use" intro="Template — have this reviewed before launch.">
       <section>
         <h2>Using {SITE_NAME}</h2>
-        <p>{SITE_NAME} lets you build a personal surprise for any occasion in your browser. By using it, you agree to these terms.</p>
+        <p>{SITE_NAME} lets you build a personal surprise for any occasion and share it with a link. By using it, you agree to these terms.</p>
       </section>
       <section>
         <h2>Your content</h2>
         <ul>
           <li>Only use photos you have the right to use, and that the people pictured would be happy to see.</li>
           <li>Don&apos;t create anything illegal, hateful, sexual, violent or harassing.</li>
-          <li>Your content stays on your device and remains yours.</li>
+          <li>Your content remains yours. It stays on your device until you ask for a link; sharing uploads it so others can open it.</li>
+          <li>We may remove shared wishes that break these rules.</li>
         </ul>
       </section>
       <section>

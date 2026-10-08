@@ -157,9 +157,9 @@ export function Landing({ occasion }: { occasion?: Occasion }) {
               <h2 className="font-display text-2xl font-semibold">Private by design</h2>
               <ul className="mt-5 space-y-3 text-cream/80">
                 <li>• No account, no sign-up.</li>
-                <li>• Photos never leave your device.</li>
-                <li>• Nothing is stored on a server.</li>
-                <li>• Close the tab and it&apos;s gone.</li>
+                <li>• Photos stay on your device while you build.</li>
+                <li>• Nothing is uploaded until you ask for a link.</li>
+                <li>• Only people with your link can open it.</li>
               </ul>
             </div>
             <div>
