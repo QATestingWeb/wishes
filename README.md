@@ -46,7 +46,9 @@ Without the token everything else works; “Get my link” answers *“Sharing i
 - The draft is saved in `sessionStorage`, so a refresh keeps it and closing the tab clears it.
 - A shared wish is `wishes/<slug>.json` plus `photos/<id>.jpg` in the Blob store (`lib/share.ts`). Slugs are 12
   random characters; `/w/` pages are `noindex`. Asking for a link twice without changes reuses the first link.
-- There is no expiry or delete screen yet — remove a wish by deleting its files in the Vercel Blob dashboard.
+- Links work for `LIMITS.shareDays` (30) days. A daily Vercel Cron job (`vercel.json` → `/api/cron/cleanup`)
+  deletes older wishes and photos; it only runs when the `CRON_SECRET` environment variable is set (any long
+  random string). To remove one wish sooner, delete its files in the Vercel Blob dashboard.
 - The upload routes validate everything and have a small per-instance rate limit. For real traffic put a shared
   limiter (e.g. Upstash) or Vercel's firewall rules in front of `/api/*`.
 
@@ -60,6 +62,7 @@ app/
   preview/            full-screen surprise, reads the draft from the browser
   w/[slug]/           a shared wish — what the recipient opens
   api/photos, wishes  the two upload routes behind “Get my link”
+  api/cron/cleanup    daily job that deletes expired wishes
   help, privacy, terms
 components/
   Landing.tsx         landing page (with a live demo of the surprise)

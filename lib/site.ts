@@ -10,6 +10,8 @@ export const LIMITS = {
   maxNameLength: 40,
   maxMessageLength: 1500,
   maxQuiz: 5,
+  /** Shared wishes and their photos are deleted this many days after the link is created. */
+  shareDays: 30,
 } as const;
 
 export const FAQS = [
@@ -31,8 +33,12 @@ export const FAQS = [
     a: "Anyone who has the link. Links are long and random, and shared wishes are hidden from search engines.",
   },
   {
+    q: "How long does a link work?",
+    a: `${LIMITS.shareDays} days. After that the wish and its photos are deleted automatically.`,
+  },
+  {
     q: "What happens if I refresh the page?",
-    a: "Your draft is kept in this browser tab, so a refresh won't lose it. Closing the tab clears the draft — links you already created keep working.",
+    a: "Your draft is kept in this browser tab, so a refresh won't lose it. Closing the tab clears the draft — links you already created keep working until they expire.",
   },
   { q: "How many photos can I add?", a: "Up to 4 photos — JPG, PNG, WebP or GIF." },
   {

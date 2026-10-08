@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { cache } from "react";
-import { get, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 import { findOccasion } from "./occasions";
 import { LIMITS } from "./site";
 import { THEMES } from "./themes";
@@ -156,5 +156,31 @@ export const getWish = cache(async (slug: string): Promise<SharedWish | null> =>
   if (!SLUG.test(slug) || !sharingEnabled()) return null;
   const res = await get(`wishes/${slug}.json`, { access: "public" });
   if (!res || res.statusCode !== 200) return null;
-  return (await new Response(res.stream).json()) as SharedWish;
+  const wish = (await new Response(res.stream).json()) as SharedWish;
+  // The daily cleanup deletes the files; this makes the link stop on time even if that run is late.
+  return Date.parse(wish.createdAt) < expiryCutoff() ? null : wish;
 });
+
+/* ------------------------------------------------------------------ Cleanup */
+
+function expiryCutoff() {
+  return Date.now() - LIMITS.shareDays * 24 * 60 * 60 * 1000;
+}
+
+/** Deletes wishes and photos older than LIMITS.shareDays. Returns how many files were removed. */
+export async function deleteExpired(): Promise<number> {
+  const cutoff = expiryCutoff();
+  const expired: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({ cursor, limit: 1000 });
+    for (const b of page.blobs) {
+      const ours = b.pathname.startsWith("wishes/") || b.pathname.startsWith("photos/");
+      if (ours && b.uploadedAt.getTime() < cutoff) expired.push(b.url);
+    }
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+
+  for (let i = 0; i < expired.length; i += 100) await del(expired.slice(i, i + 100));
+  return expired.length;
+}

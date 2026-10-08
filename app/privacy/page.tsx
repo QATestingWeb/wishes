@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ProsePage } from "@/components/SiteChrome";
+import { LIMITS } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Privacy" };
 
@@ -24,8 +25,9 @@ export default function PrivacyPage() {
       <section>
         <h2>How long is it kept?</h2>
         <p>
-          A draft lasts until you close the tab. A shared wish stays available at its link until it is removed — contact
-          us with the link if you&apos;d like yours deleted.
+          A draft lasts until you close the tab. A shared wish and its photos are deleted automatically{" "}
+          {LIMITS.shareDays} days after the link is created — contact us with the link if you&apos;d like yours removed
+          sooner.
         </p>
       </section>
       <section>

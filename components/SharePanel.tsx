@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Occasion } from "@/lib/occasions";
+import { LIMITS } from "@/lib/site";
 
 export function SharePanel({ url, recipientName, occasion }: { url: string; recipientName: string; occasion: Occasion }) {
   const [copied, setCopied] = useState(false);
@@ -52,6 +53,7 @@ export function SharePanel({ url, recipientName, occasion }: { url: string; reci
       <p className="sr-only" aria-live="polite">
         {copied ? "Link copied to clipboard" : ""}
       </p>
+      <p className="mt-2 text-sm text-ink-soft">This link works for {LIMITS.shareDays} days.</p>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <a
